@@ -1,49 +1,46 @@
-# src/config.py
 import os
 
-
 class Config:
-    # 模型配置（这里换成你本地 Ollama 跑得最顺的模型名）
-    EMBED_MODEL = "nomic-embed-text"
-    CHAT_MODEL = "qwen2.5-coder:7b"
+    # ==================== 路径配置 ====================
+    DATA_PATH = "data/"                     # PDF 文件存放目录
+    VECTOR_DB_PATH = "vector_db/"           # 向量数据库保存路径（可选）
 
-    # RAG 参数（这是拉开差距的地方，以后你可以对比不同 Chunk 大小的效果）
-    CHUNK_SIZE = 500
-    CHUNK_OVERLAP = 50
-    TOP_K = 3
+    # ==================== 本地 Ollama 聊天模型 ====================
+    CHAT_MODEL = "qwen2.5-coder:7b"              # 推荐改成 14b 或更大模型，7b 可能偏弱
+    # CHAT_MODEL = "deepseek-r1:8b"         # 如果你已下载也可以用这个
 
-    # 路径管理（用绝对路径避免之前的 cd 报错）
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DB_PATH = os.path.join(BASE_DIR, "db")
-    DATA_PATH = os.path.join(BASE_DIR, "data")
+    # ==================== DeepSeek API 配置 ====================
+    USE_API = True
+    API_MODEL = "deepseek-reasoner"         # 推荐思考模式，适合考研复杂问题
+    # API_MODEL = "deepseek-chat"           # 速度更快、成本更低时可切换
+    API_KEY = "sk-a79795fbde894e0a95f6dde53210e1fa"   # ← 改成你真实的 Key
+    API_BASE = "https://api.deepseek.com"
 
-    # 提示词模板（解耦出来，方便以后针对不同课程换模板）
-    PROMPT_TEMPLATE = """
-    # Role
-    你是一位拥有 10 年经验的【408 计算机考研金牌讲师】，擅长以《计算机网络》、《操作系统》、《数据结构》、《计算机组成原理》四大教材为基准进行深度解析。
+    # ==================== Embedding 模型配置（关键！新增） ====================
+    # 本地 Ollama Embedding（强烈推荐目前使用）
+    EMBEDDING_MODEL = "bge-m3"              # 2026年中文 RAG 最推荐的开源模型之一
+    # 备选（任选其一）：
+    # EMBEDDING_MODEL = "nomic-embed-text"
+    # EMBEDDING_MODEL = "qwen3-embedding"     # 如果你已 pull
 
-    # Context
-    - 参考资料：{context}
-    - 当前目标：协助学生理解考点，解决疑难题目。
+    # RAG 检索参数
+    CHUNK_SIZE = 600                        # 建议调大一点，考研讲义单段通常较长
+    CHUNK_OVERLAP = 100
+    TOP_K = 4                               # 检索返回 4 个最相关片段（可调 3~6）
 
-    # Task
-    请根据提供的【参考资料】回答【学生提问】。
+    # ==================== Prompt 模板（已优化） ====================
+    PROMPT_TEMPLATE = """你是一位专业、严谨、有十年教学经验的 408 考研导师（涵盖数据结构、操作系统、计算机网络、计算机组成原理）。
+请严格基于上下文信息回答问题，结合历史对话，重点突出核心考点、易混点、经典解题思路。
+回答要逻辑清晰、条理分明，适当使用 Markdown 列表、加粗、编号。
+如果上下文不足，可结合专业知识补充，但请注明“基于通用考研知识”。
 
-    # Rules (必须严格遵守)
-    1. **优先性原则**：首选参考资料中的内容进行回答。若资料不足，必须结合“408 考研大纲”及经典教材（如唐朔飞、严蔚敏、汤小丹等版本）进行补充。
-    2. **术语规范**：所有专业术语（如：**TLB快表**、**PV操作**、**拥塞窗口**等）必须加粗。
-    3. **逻辑架构**：
-       - [概念解析]：简明扼要说明核心定义。
-       - [深度对比]：若涉及易混淆点（如分段 vs 分页），须列表对比。
-       - [代码/图解]：涉及算法必须提供 C++ 代码，并符合考研手写规范（如：`LinkList` 定义）。
-    4. **防幻觉策略**：若问题完全脱离计算机专业领域，请礼貌拒绝。
+【对话历史】
+{chat_history}
 
-    # Output Format
-    1. 核心结论（一句话总结）
-    2. 详细要点（分点陈述）
-    3. 考研坑点（提醒学生在该知识点容易犯的错误）
+【参考上下文】
+{context}
 
-    # Start
-    学生提问：{question}
-    答：
-    """
+【当前问题】
+{question}
+
+请直接开始回答，不要重复问题："""

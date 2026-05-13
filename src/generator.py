@@ -1,29 +1,84 @@
-# src/generator.py
 from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from src.config import Config
 
 
 class AnswerGenerator:
     def __init__(self):
-        # 这里的模型名直接从 Config 读取，以后改模型只需动 config.py
-        self.llm = ChatOllama(
+        # ==================== 本地 Ollama ====================
+        self.ollama_llm = ChatOllama(
             model=Config.CHAT_MODEL,
-            temperature=0.3,  # 考研题要严谨，温度开低点
-            streaming=True  # 开启流式输出，用户体验拉满
+            temperature=0.25,
+            streaming=True,
+            num_ctx=16384,  # 上下文窗口
         )
 
-    def generate(self, question, context_docs):
-        """
-        核心逻辑：把检索到的知识块拼进 Prompt 模板
-        """
-        # 1. 提取文本内容
-        context_text = "\n\n".join([doc.page_content for doc in context_docs])
+        # ==================== DeepSeek API ====================
+        self.api_llm = None
+        if (getattr(Config, 'USE_API', False) and
+                getattr(Config, 'API_KEY', None) and
+                Config.API_KEY.startswith('sk-a79795fbde894e0a95f6dde53210e1fa')):
 
-        # 2. 填充模板（这部分以后可以根据不同科目在 Config 里换）
-        prompt = Config.PROMPT_TEMPLATE.format(
-            context=context_text,
-            question=question
-        )
+            self.api_llm = ChatOpenAI(
+                model=Config.API_MODEL,  # 推荐使用 "deepseek-reasoner"
+                api_key=Config.API_KEY,
+                base_url=Config.API_BASE,  # https://api.deepseek.com
+                temperature=0.25,
+                streaming=True,
+                max_tokens=4096,
+            )
+            print(f"✅ DeepSeek API 加载成功 → 模型: {Config.API_MODEL}")
+        else:
+            print("⚠️ DeepSeek API 配置不完整，将默认使用本地 Ollama")
 
-        # 3. 调用大模型（流式返回，省得用户等半天）
-        return self.llm.stream(prompt)
+        # 默认模式
+        self.current_mode = "api" if self.api_llm else "ollama"
+
+    def switch_mode(self, mode: str) -> bool:
+        """切换模型模式"""
+        if mode == "api" and self.api_llm is not None:
+            self.current_mode = "api"
+            print("🔄 已切换到 → DeepSeek API (云端)")
+            return True
+        elif mode == "ollama":
+            self.current_mode = "ollama"
+            print("🔄 已切换到 → 本地 Ollama")
+            return True
+        return False
+
+    def get_llm(self):
+        """返回当前使用的 LLM"""
+        return self.api_llm if self.current_mode == "api" else self.ollama_llm
+
+    def generate(self, question: str, context_docs, chat_history):
+        # 构建参考资料文本
+        context_text = ""
+        for i, doc in enumerate(context_docs):
+            source = doc.metadata.get('source', '未知文件')
+            page = doc.metadata.get('page', '?')
+            context_text += f"[片段 {i + 1} | 来源: {source} 第{page}页]\n{doc.page_content}\n\n"
+
+        # 构建历史对话（保留最近8轮）
+        history_text = ""
+        for msg in chat_history[-8:]:
+            role = "学生" if msg["role"] == "user" else "导师"
+            history_text += f"{role}: {msg['content']}\n"
+
+        prompt = f"""你是一位专业、严谨、条理清晰的 408 考研导师（数据结构、操作系统、计算机网络、计算机组成原理）。
+请严格基于提供的参考资料和历史对话回答问题，重点突出核心考点、易混淆知识点和解题思路。不在资料库里的内容请基于通识知识回答。
+回答要求：准确、专业、层次分明，可使用分点或编号形式。
+
+【历史对话】
+{history_text}
+
+【参考资料】
+{context_text}
+
+【当前问题】
+{question}
+
+请直接开始回答，不要添加多余的客套话："""
+
+        # 使用当前选择的模型生成回答
+        llm = self.get_llm()
+        return llm.stream(prompt)
