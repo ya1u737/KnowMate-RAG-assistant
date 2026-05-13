@@ -1,28 +1,78 @@
-# 🎓 408-RAG-Pro: 基于本地 LLM 的计算机考研智能辅导助手
+# 408-RAG-PRO
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-orange.svg)
-![LangChain](https://img.shields.io/badge/LangChain-Framework-green.svg)
+**🎓 基于本地 LLM 的计算机考研 408 智能辅导助手**
 
-## 🌟 项目简介
-这是一个专为 **408 计算机考研**（数据结构、操作系统、计组、计网）设计的 RAG（检索增强生成）系统。
-不同于通用的 PDF 助手，本项目通过**结构化 Prompt 工程**与**模块化架构**，深度对齐 408 考纲要求，提供精准的术语解析与 C++ 代码示范。
+一个专为**数据结构、操作系统、计算机组成原理、计算机网络**四门考研核心课程打造的本地 RAG 系统。
 
-## 🏗️ 核心架构
-项目采用**解耦设计**，确保每一层逻辑的可扩展性：
-- **Config**: 集中化管理模型参数与检索阈值。
-- **Parser**: 基于 PyMuPDF 的文本清洗与分段策略。
-- **Retriever**: 向量存储与语义检索，支持检索分数过滤。
-- **Generator**: 针对 408 场景优化的结构化提示词引擎。
+---
+
+## ✨ 项目介绍
+
+本项目旨在帮助 408 考研学生通过本地大模型 + 向量检索，实现对教材、真题、笔记的高效问答。  
+支持上传 PDF 资料，结合专为 408 优化的 Prompt，提供准确、专业、结构化的回答。
+
+**核心优势**：
+- 完全本地运行，保护隐私
+- 针对 408 考纲进行深度优化
+- 模块化设计，易于扩展
+- 支持自定义知识库
+
+---
 
 ## 🛠️ 技术栈
-- **LLM**: Ollama (Qwen2 / Llama3)
-- **Vector DB**: ChromaDB
-- **Framework**: LangChain
-- **UI**: Streamlit
+
+- **大语言模型**：Ollama (Qwen2.5 / Llama3)
+- **框架**：LangChain
+- **向量数据库**：ChromaDB
+- **PDF 解析**：PyMuPDF + RecursiveCharacterTextSplitter
+- **前端界面**：Streamlit
+- **Python 版本**：3.10+
+
+---
 
 ## 🚀 快速开始
-1. **克隆项目**:
-   ```bash
-   git clone [https://github.com/你的用户名/408-RAG-Pro.git](https://github.com/你的用户名/408-RAG-Pro.git)
-   cd 408-RAG-Pro
+
+### 1. 克隆仓库
+
+```bash
+git clone https://github.com/ya1u737/408-RAG-PRO.git
+cd 408-RAG-PRO
+2. 安装依赖
+Bashpip install -r requirements.txt
+3. 启动 Ollama
+Bash# 推荐使用 Qwen2.5
+ollama pull qwen2.5:7b
+# 或使用 Llama3
+ollama pull llama3.2
+4. 运行项目
+Bashstreamlit run app.py
+打开浏览器访问 http://localhost:8501 即可使用。
+
+📁 项目结构
+text408-RAG-PRO/
+├── config.py                 # 配置管理
+├── app.py                    # Streamlit 主界面
+├── requirements.txt
+├── README.md
+├── LICENSE
+└── src/
+    ├── pdf_parser.py         # PDF 解析与分段
+    ├── vector_store.py       # 向量存储与检索
+    └── generator.py          # 回答生成模块（含 408 专用 Prompt）
+
+🗺️ 开发计划
+
+ 在回答中显示知识来源页码
+ 支持多轮对话记忆
+ 引入 BM25 + 向量混合检索
+ 添加更多使用示例和截图
+ 支持 Docker 一键部署
+
+
+📄 开源协议
+本项目基于 MIT License 开源。
+
+欢迎各位 408 考研的同学使用和反馈！
+有任何问题或建议，欢迎在 Issues 中提出。
+
+Made with ❤️ for 408 考研人
