@@ -10,4 +10,5 @@ data/*.pdf
 .gitconfig
 .ssh/
 .venv/
+mock_test/
 __pycache__/
