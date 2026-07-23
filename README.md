@@ -1,139 +1,134 @@
-# RAG-Bot — Local-First Knowledge Base Assistant
-
-> 🎓 基于本地大模型的 RAG 知识库助手，隐私优先，支持 408 考研 / 医疗 / 法律等强知识检索场景。
+# KnowMate-RAG Assistant
+> Local-First Knowledge Base Assistant
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Streamlit](https://img.shields.io/badge/frontend-streamlit-red.svg)](https://streamlit.io/)
 [![Powered by Ollama](https://img.shields.io/badge/LLM-Ollama-orange.svg)](https://ollama.com/)
 
-<div align="center">
-  <img src="docs/demo.png" alt="Demo Screenshot" width="800">
-  <p><em>（截图待补充）</em></p>
-</div>
+KnowMate 是一个面向强知识领域场景的本地 RAG 助手框架，可用于教育、医疗、法律等需要知识检索和引用的场景。
 
 ---
 
-## ✨ 功能特点
+## 🌟 Core Features
 
-- 🏠 **完全本地**：所有模型运行在本地，无需联网，保护隐私
-- 🔄 **云端可选**：支持 DeepSeek API 云端模式，一键切换
-- 🧠 **智能检索**：向量检索 + Cross Encoder Rerank，精准匹配
-- 📚 **多格式支持**：PDF / TXT / DOCX 文档解析
-- 🎨 **现代 UI**：Streamlit 聊天界面，暗色主题
-- 🔌 **可扩展**：支持接入不同领域知识库（408 考研 / 医疗 / 法律）
+### Local RAG Pipeline
+- **Document Parsing** — PDF / TXT files
+- **Text Chunking** — RecursiveCharacterTextSplitter
+- **Vector Retrieval** — Chroma + bge-m3 (Ollama)
+- **Cross Encoder Reranking** — bge-reranker-v2-m3 (sentence-transformers)
+- **LLM Generation** — Qwen2.5 / DeepSeek-R1 (Ollama) / DeepSeek API
+
+### Privacy-first Design
+- Ollama local inference
+- Local vector database
+- Documents remain locally
+- Optional Cloud API fallback
+
+### Domain Adaptation
+- 408 Computer Science
+- Medical documents
+- Legal documents
 
 ---
 
-## 🏗️ 技术架构
+## 🏗️ Architecture
 
 ```
-用户提问
+User Query
   ↓
-Streamlit 前端
+Streamlit Frontend
   ↓
-┌──────────── RAG Pipeline ────────────┐
-│  ① 文档解析（PyMuPDF + TextSplitter）│
-│  ② 向量检索（Chroma + bge-m3）       │
-│  ③ Rerank（bge-reranker-v2-m3）      │
-│  ④ LLM 生成（deepseek-r1:14b）       │
-└──────────────────────────────────────┘
+┌─────────── RAG Pipeline ───────────┐
+│  ① Document Parsing (PyMuPDF)     │
+│  ② Text Chunking (TextSplitter)   │
+│  ③ Vector Retrieval (Chroma)      │
+│  ④ Cross Encoder Reranking        │
+│  ⑤ LLM Generation                 │
+└────────────────────────────────────┘
   ↓
-Ollama 本地模型 / DeepSeek 云端 API
+Ollama Local Models / DeepSeek API
 ```
 
-### 技术栈
+### Tech Stack
 
-| 层 | 技术 |
-|---|------|
+| Layer | Technology |
+|-------|-----------|
 | UI | Streamlit |
-| 文档解析 | PyMuPDF / langchain-text-splitters |
-| 向量检索 | Chroma + bge-m3 (Ollama) |
-| 重排序 | bge-reranker-v2-m3 (sentence-transformers) |
+| Document Parsing | PyMuPDF / langchain-text-splitters |
+| Vector Retrieval | Chroma + bge-m3 (Ollama) |
+| Reranking | bge-reranker-v2-m3 (sentence-transformers) |
 | LLM | qwen2.5:7b / deepseek-r1:14b (Ollama) |
 
 ---
 
-## 🚀 快速启动
+## 🚀 Quick Start
 
-### 前置条件
+### Prerequisites
 
 - Python 3.11+
-- [Ollama](https://ollama.com/)（本地模型运行环境）
+- [Ollama](https://ollama.com/)
 
-### 安装
+### Installation
 
 ```bash
-git clone https://github.com/ya1u737/408-RAG-PRO.git
-cd 408-RAG-PRO
+git clone https://github.com/ya1u737/KnowMate-RAG-assistant.git
+cd KnowMate-RAG-assistant
 pip install -r requirements.txt
 ```
 
-### 下载模型
+### Model Setup
 
 ```bash
-# 1. 聊天模型（任选一个）
+# Chat model (choose one)
 ollama pull qwen2.5:7b
-# 或：
-ollama pull deepseek-r1:14b  # 需要 9GB+ 显存
+# or:
+ollama pull deepseek-r1:14b
 
-# 2. Embedding 模型
+# Embedding model
 ollama pull bge-m3
 
-# 3. Reranker 模型（自动下载到用户目录）
-# 代码首次运行时会自动从 HuggingFace 缓存
-# 或在启动时设置环境变量：
-# export RERANKER_MODEL=/path/to/bge-reranker-v2-m3
+# Reranker model (auto-downloaded from HuggingFace on first run)
 ```
 
-### 启动
+### Run
 
 ```bash
 streamlit run app.py
 ```
 
-浏览器打开 `http://localhost:8501`
+Open `http://localhost:8501` in your browser.
 
 ---
 
-## 📦 环境配置
+## ⚙️ Configuration
 
 ```bash
-# 创建 .env 文件
 cp .env.example .env
-
-# 编辑 .env，填入你的 API Key（可选）
-DEEPSEEK_API_KEY=sk-your-key-here  # 留空则使用本地 Ollama
-USE_API=false                       # 设为 true 时使用 DeepSeek API
 ```
 
-### 配置项
+Edit `.env` to set DeepSeek API Key (optional):
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `CHAT_MODEL` | `qwen2.5:7b` | Ollama 聊天模型 |
-| `EMBEDDING_MODEL` | `bge-m3` | Ollama Embedding 模型 |
-| `RERANKER_MODEL` | `bge-reranker-v2-m3` | Cross Encoder 模型 |
-| `RETRIEVAL_TOP_K` | 5 | 向量召回候选数 |
-| `FINAL_TOP_K` | 3 | Rerank 后返回数 |
+```
+DEEPSEEK_API_KEY=sk-your-key-here   # leave empty for local Ollama
+USE_API=false                        # set true to use DeepSeek API
+```
 
----
+### Parameters
 
-## 🔮 后续规划
-
-- [ ] 知识库持久化存储（Chroma 持久化）
-- [ ] Hybrid Search（BM25 + 向量）
-- [ ] 引用增强（标记文档来源）
-- [ ] 多知识库隔离切换
-- [ ] 医疗 / 法律领域适配模板
-- [ ] Docker 一键部署
-- [ ] 单元测试覆盖
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `CHAT_MODEL` | `qwen2.5:7b` | Ollama chat model |
+| `EMBEDDING_MODEL` | `bge-m3` | Ollama embedding model |
+| `RERANKER_MODEL` | `bge-reranker-v2-m3` | Cross encoder model path |
+| `RETRIEVAL_TOP_K` | 5 | Candidate count for retrieval |
+| `FINAL_TOP_K` | 3 | Final documents after rerank |
 
 ---
 
 ## 📄 License
 
-MIT License. 详见 [LICENSE](LICENSE)
+MIT License. See [LICENSE](LICENSE)
 
 ---
 
