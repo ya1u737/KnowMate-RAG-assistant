@@ -15,22 +15,7 @@ class AnswerGenerator:
 
         # ==================== DeepSeek API ====================
         self.api_llm = None
-        if (getattr(Config, 'USE_API', False) and
-                getattr(Config, 'API_KEY', None) and
-                Config.API_KEY.startswith('sk-a79795fbde894e0a95f6dde53210e1fa')):
-
-            self.api_llm = ChatOpenAI(
-                model=Config.API_MODEL,  # 推荐使用 "deepseek-reasoner"
-                api_key=Config.API_KEY,
-                base_url=Config.API_BASE,  # https://api.deepseek.com
-                temperature=0.25,
-                streaming=True,
-                max_tokens=4096,
-            )
-            print(f"✅ DeepSeek API 加载成功 → 模型: {Config.API_MODEL}")
-        else:
-            print("⚠️ DeepSeek API 配置不完整，将默认使用本地 Ollama")
-
+        
         # 默认模式
         self.current_mode = "api" if self.api_llm else "ollama"
 
