@@ -9,6 +9,10 @@
 KnowMate 是一个面向强知识领域场景的本地 RAG 助手框架，可用于教育、医疗、法律等需要知识检索和引用的场景。
 
 ---
+## DEMO
+
+<img src="./assets/demo.png" width="800">
+
 
 ## 🌟 Core Features
 
@@ -122,13 +126,18 @@ USE_API=false                        # set true to use DeepSeek API
 | `EMBEDDING_MODEL` | `bge-m3` | Ollama embedding model |
 | `RERANKER_MODEL` | `bge-reranker-v2-m3` | Cross encoder model path |
 | `RETRIEVAL_TOP_K` | 5 | Candidate count for retrieval |
-| `FINAL_TOP_K` | 3 | Final documents after rerank |
+- [ ] Hybrid Search（BM25 + 向量）
+- [ ] 引用增强（标记文档来源）
+- [ ] 多知识库隔离切换
+- [ ] 医疗 / 法律领域适配模板
+- [ ] Docker 一键部署
+- [ ] 单元测试覆盖
 
 ---
 
 ## 📄 License
 
-MIT License. See [LICENSE](LICENSE)
+MIT License. 详见 [LICENSE](LICENSE)
 
 ---
 
