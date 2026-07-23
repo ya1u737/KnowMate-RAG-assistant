@@ -1,14 +1,37 @@
+# Environment
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
 .venv/
 venv/
-__pycache__/
+
+# IDE
 .idea/
 .vscode/
-db/
-data/*.pdf
-.DS_Store.gitconfig
-.ssh/
+s
+# Git config / SSH
 .gitconfig
 .ssh/
-.venv/
+
+# Data
+data/
 mock_test/
-__pycache__/
+
+# Vector database
+db/
+
+# Model files
+models/
+*.safetensors
+*.bin
+
+# OS
+.DS_Store
+Thumbs.db
+
+.streamlit/

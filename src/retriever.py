@@ -1,5 +1,8 @@
-from langchain_community.vectorstores import FAISS
-from langchain_ollama import OllamaEmbeddings, ChatOllama
+import time
+import torch
+from langchain_chroma import Chroma
+from langchain_ollama import OllamaEmbeddings
+from sentence_transformers import CrossEncoder
 from src.config import Config
 
 
@@ -13,80 +16,55 @@ class KnowledgeBase:
         # 向量库
         self.db = None
 
-        # 用于 Query 改写
-        self.llm = ChatOllama(
-            model=Config.CHAT_MODEL,
-            temperature=0
-        )
+        # Cross Encoder Reranker（自动选择 GPU/CPU）
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        print(f'[RERANK] 设备: {device}')
+        self.reranker = CrossEncoder(Config.RERANKER_MODEL, device=device)
 
     # ==================== 添加文档 ====================
     def add_documents(self, docs):
         if self.db is None:
-            self.db = FAISS.from_documents(docs, self.embedding)
+            self.db = Chroma.from_documents(docs, self.embedding)
         else:
             self.db.add_documents(docs)
 
-    # ==================== Query 改写 ====================
-    def rewrite_query(self, query):
-        prompt = f"""
-请将用户问题改写为更适合知识检索的形式，使其更完整、明确：
-
-用户问题：
-{query}
-
-改写后的检索问题：
-"""
-        try:
-            res = self.llm.invoke(prompt)
-            return res.content.strip()
-        except:
-            return query  # 出错就用原问题
-
-    # ==================== 简单 rerank ====================
+    # ==================== Cross Encoder Rerank ====================
     def rerank(self, query, docs):
-        scored = []
+        candidates = len(docs)
+        if candidates == 0:
+            return docs
 
-        for doc in docs:
-            text = doc.page_content
+        # 批量构造 (query, doc) 对
+        pairs = [(query, d.page_content) for d in docs]
 
-            prompt = f"""
-请判断以下内容与问题的相关性，给出0-10分：
+        # 批量评分
+        scores = self.reranker.predict(pairs)
 
-问题：
-{query}
-
-内容：
-{text[:300]}
-
-只输出一个数字分数：
-"""
-            try:
-                res = self.llm.invoke(prompt)
-                score = float(res.content.strip())
-            except:
-                score = 0
-
-            scored.append((score, doc))
-
+        # 按 score 从高到低排序
+        scored = list(zip(scores, docs))
         scored.sort(key=lambda x: x[0], reverse=True)
 
-        return [doc for score, doc in scored[:Config.FINAL_TOP_K]]
+        selected = [doc for _, doc in scored[:Config.FINAL_TOP_K]]
+        return selected
 
-    # ==================== 搜索（核心） ====================
+    # ==================== 搜索 ====================
     def search(self, query):
+        t_total_start = time.time()
+
         if self.db is None:
             return []
 
-        # 1️⃣ Query 改写
-        new_query = self.rewrite_query(query)
+        # 1️⃣ 向量召回
+        t0 = time.time()
+        docs = self.db.similarity_search(query, k=Config.RETRIEVAL_TOP_K)
+        t_retrieval = time.time() - t0
+        candidates = len(docs)
 
-        # 2️⃣ 向量召回（多取一点）
-        docs = self.db.similarity_search(
-            new_query,
-            k=Config.RETRIEVAL_TOP_K
-        )
-
-        # 3️⃣ rerank
+        # 3️⃣ Cross Encoder Rerank
+        t0 = time.time()
         docs = self.rerank(query, docs)
+        t_rerank = time.time() - t0
+
+        print(f'[PERF] Retrieval: {t_retrieval:.2f}s | Rerank: {t_rerank:.2f}s | candidates={candidates} | selected={len(docs)}')
 
         return docs

@@ -229,14 +229,22 @@ if prompt := st.chat_input("在此提问 408 考点..."):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
+        import time as _t
+        _t0 = _t.time()
         relevant_docs = st.session_state.kb.search(prompt)
-        res_box = st.empty()
+        _t_ret_total = _t.time() - _t0
 
+        res_box = st.empty()
+        _t1 = _t.time()
         full_res = res_box.write_stream(
             st.session_state.generator.generate(
                 prompt, relevant_docs, st.session_state.messages[:-1]
             )
         )
+        _t_gen = _t.time() - _t1
+        _t_total = _t.time() - _t0
+        print(f'[PERF] Generation: {_t_gen:.2f}s')
+        print(f'[PERF] Total: {_t_total:.2f}s')
 
         if relevant_docs:
             with st.expander("📚 查看参考来源"):
